@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/rate-limit"
 import { imageUploadSchema } from "@/lib/validation"
 import { stackServerApp } from "@/stack"
 import { getEffectiveUser } from "@/lib/auth-utils"
+import { getClientIP } from "@/lib/security-utils"
 
 const recordSchema = z.object({
   title: z.string().describe("The album title"),
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
-    const clientIP = request.ip || request.headers.get("x-forwarded-for") || "anonymous"
+    const clientIP = getClientIP(request)
     const rateLimitResult = rateLimit(`extract-record:${clientIP}`, 3, 300000) // 3 requests per 5 minutes
 
     if (!rateLimitResult.success) {
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       schema: recordSchema,
     })
 
-    const result = await Promise.race([aiPromise, timeoutPromise])
+    const result = await Promise.race([aiPromise, timeoutPromise]) as { object: any }
 
     console.log("[v0] AI extraction successful:", result.object)
 

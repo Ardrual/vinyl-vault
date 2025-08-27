@@ -17,7 +17,7 @@ export type Record = {
   genre?: string
   label?: string
   catalog_number?: string
-  condition: string
+  condition?: string
   notes?: string
   image_url?: string
   user_id?: string // Added user_id field for user association

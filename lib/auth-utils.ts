@@ -9,7 +9,8 @@ export function createGuestUser() {
 }
 
 export function getEffectiveUser(stackUser: any) {
-  if (isDevelopment && !stackUser) {
+  // Only allow guest users in development AND when explicitly enabled
+  if (isDevelopment && !stackUser && process.env.ALLOW_GUEST_ACCESS === "true") {
     return createGuestUser()
   }
   return stackUser

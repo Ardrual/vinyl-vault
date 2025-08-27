@@ -258,8 +258,8 @@ export function CollectionBrowser() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Genres</SelectItem>
-                  {uniqueGenres.map((genre) => (
-                    <SelectItem key={genre} value={genre}>
+                  {uniqueGenres.filter(genre => genre).map((genre) => (
+                    <SelectItem key={genre} value={genre!}>
                       {genre}
                     </SelectItem>
                   ))}
@@ -272,8 +272,8 @@ export function CollectionBrowser() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Conditions</SelectItem>
-                  {uniqueConditions.map((condition) => (
-                    <SelectItem key={condition} value={condition}>
+                  {uniqueConditions.filter(condition => condition).map((condition) => (
+                    <SelectItem key={condition} value={condition!}>
                       {condition}
                     </SelectItem>
                   ))}

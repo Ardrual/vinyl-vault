@@ -53,7 +53,7 @@ export function EditRecordForm({ recordId }: EditRecordFormProps) {
           genre: record.genre || "",
           label: record.label || "",
           catalog_number: record.catalog_number || "",
-          condition: record.condition,
+          condition: record.condition || "",
           notes: record.notes || "",
           image_url: record.image_url || "",
         })

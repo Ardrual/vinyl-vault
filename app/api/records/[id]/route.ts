@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/db"
 import { getEffectiveUser } from "@/lib/auth-utils"
+import { recordSchema } from "@/lib/validation"
+import { sanitizeError, createValidationError } from "@/lib/error-utils"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -27,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(record)
   } catch (error) {
     console.error("Error fetching record:", error)
-    return NextResponse.json({ error: "Failed to fetch record" }, { status: 500 })
+    return NextResponse.json(sanitizeError(error), { status: 500 })
   }
 }
 
@@ -57,7 +59,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ message: "Record deleted successfully" })
   } catch (error) {
     console.error("Error deleting record:", error)
-    return NextResponse.json({ error: "Failed to delete record" }, { status: 500 })
+    return NextResponse.json(sanitizeError(error), { status: 500 })
   }
 }
 
@@ -77,7 +79,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const body = await request.json()
 
-    const updatedRecord = await updateUserRecord(id, body, user.id)
+    // Validate the request body against the record schema (allow partial updates)
+    const updateSchema = recordSchema.partial()
+    const validation = updateSchema.safeParse(body)
+    
+    if (!validation.success) {
+      return NextResponse.json(createValidationError(validation.error), { status: 400 })
+    }
+
+    const updatedRecord = await updateUserRecord(id, validation.data, user.id)
 
     if (!updatedRecord) {
       return NextResponse.json({ error: "Record not found" }, { status: 404 })
@@ -86,6 +96,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(updatedRecord)
   } catch (error) {
     console.error("Error updating record:", error)
-    return NextResponse.json({ error: "Failed to update record" }, { status: 500 })
+    return NextResponse.json(sanitizeError(error), { status: 500 })
   }
 }

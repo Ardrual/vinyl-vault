@@ -4,6 +4,7 @@ import { recordSchema } from "@/lib/validation"
 import { rateLimit } from "@/lib/rate-limit"
 import { stackServerApp } from "@/stack"
 import { getEffectiveUser } from "@/lib/auth-utils"
+import { getClientIP } from "@/lib/security-utils"
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
-    const clientIP = request.ip || request.headers.get("x-forwarded-for") || "anonymous"
+    const clientIP = getClientIP(request)
     const rateLimitResult = rateLimit(`create-record:${clientIP}`, 5, 60000) // 5 requests per minute
 
     if (!rateLimitResult.success) {
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
-    const clientIP = request.ip || request.headers.get("x-forwarded-for") || "anonymous"
+    const clientIP = getClientIP(request)
     const rateLimitResult = rateLimit(`fetch-records:${clientIP}`, 30, 60000) // 30 requests per minute
 
     if (!rateLimitResult.success) {
