@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { rateLimit } from "@/lib/rate-limit"
+import { getClientIP } from "@/lib/security-utils"
+import { sanitizeError } from "@/lib/error-utils"
 
 const DiscogsSearchSchema = z.object({
   catno: z.string().min(1, "Catalog number is required"),
@@ -31,6 +34,23 @@ interface DiscogsSearchResponse {
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting for external API calls
+    const clientIP = getClientIP(request)
+    const rateLimitResult = rateLimit(`discogs-lookup:${clientIP}`, 10, 60000) // 10 requests per minute
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ 
+        error: "Too many Discogs lookup requests. Please try again later." 
+      }, { 
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0", 
+          "X-RateLimit-Reset": rateLimitResult.resetTime.toString(),
+        }
+      })
+    }
+
     const { searchParams } = new URL(request.url)
     const catno = searchParams.get("catno")
 
@@ -80,9 +100,15 @@ export async function GET(request: NextRequest) {
       success: true,
       results: transformedResults,
       total: data.pagination.items,
+    }, {
+      headers: {
+        "X-RateLimit-Limit": "10",
+        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+        "X-RateLimit-Reset": rateLimitResult.resetTime.toString(),
+      }
     })
   } catch (error) {
     console.error("[v0] Error in Discogs lookup:", error)
-    return NextResponse.json({ error: "Internal server error during Discogs lookup" }, { status: 500 })
+    return NextResponse.json(sanitizeError(error), { status: 500 })
   }
 }
