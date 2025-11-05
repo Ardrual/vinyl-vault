@@ -117,6 +117,3 @@ Vercel will automatically detect Next.js and configure the build settings.
 └── styles/             # Global styles
 ```
 
-## License
-
-This project is private and not licensed for public use.
